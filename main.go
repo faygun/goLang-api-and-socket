@@ -54,7 +54,20 @@ func init() {
 	}
 }
 
-func main() {
+func productsHandler(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		productsJSON, err := json.Marshal(&productList)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(productsJSON)
+	}
+}
 
+func main() {
+	http.HandleFunc("/products", productsHandler)
 	http.ListenAndServe(":5000", nil)
 }
