@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
+	"strings"
 )
 
 type Product struct {
@@ -66,6 +68,67 @@ func getNextID() int {
 	return highestID + 1
 }
 
+func findProductByID(productID int) (*Product, int) {
+	for i, product := range productList {
+		if product.ProductID == productID {
+			return &product, i
+
+		}
+	}
+
+	return nil, 0
+}
+
+func productHandler(w http.ResponseWriter, r *http.Request) {
+	urlParameterSegment := strings.Split(r.URL.Path, "products/")
+	productID, err := strconv.Atoi(urlParameterSegment[len(urlParameterSegment)-1])
+	if err != nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	product, indexOfProduct := findProductByID(productID)
+	if product == nil {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	switch r.Method {
+	case http.MethodGet:
+		result, _ := json.Marshal(product)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(result)
+	case http.MethodPut:
+		var updateProduct Product
+		body, err := ioutil.ReadAll(r.Body)
+
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		err = json.Unmarshal(body, &updateProduct)
+
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		if updateProduct.ProductID != productID {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		product = &updateProduct
+		productList[indexOfProduct] = *product
+		w.WriteHeader(http.StatusOK)
+		return
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+}
+
 func productsHandler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
@@ -102,5 +165,6 @@ func productsHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	http.HandleFunc("/products", productsHandler)
+	http.HandleFunc("/products/", productHandler)
 	http.ListenAndServe(":5000", nil)
 }
