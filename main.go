@@ -163,8 +163,18 @@ func productsHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func middlewareHandler(handler http.HandlerFunc) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// before
+		handler.ServeHTTP(w, r)
+		// after
+	})
+}
+
 func main() {
-	http.HandleFunc("/products", productsHandler)
-	http.HandleFunc("/products/", productHandler)
+	productsHandleFunc := http.HandlerFunc(productsHandler)
+	producItemHandleFunc := http.HandlerFunc(productHandler)
+	http.Handle("/products", middlewareHandler(productsHandleFunc))
+	http.Handle("/products/", middlewareHandler(producItemHandleFunc))
 	http.ListenAndServe(":5000", nil)
 }
