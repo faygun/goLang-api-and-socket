@@ -66,7 +66,12 @@ func handleProduct(w http.ResponseWriter, r *http.Request) {
 	}
 	switch r.Method {
 	case http.MethodGet:
-		product := getProduct(productID)
+		product, err := getProduct(productID)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
 		if product == nil {
 			w.WriteHeader(http.StatusNotFound)
 			return
