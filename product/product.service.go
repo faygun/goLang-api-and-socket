@@ -16,7 +16,12 @@ const productsPath = "products"
 func handleProducts(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		productList := getProductList()
+		productList, err := getProductList()
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
 		j, err := json.Marshal(productList)
 		if err != nil {
 			log.Fatal(err)

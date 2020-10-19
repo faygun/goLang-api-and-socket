@@ -8,6 +8,8 @@ import (
 	"os"
 	"sort"
 	"sync"
+
+	"github.com/faygun/goLang-api-and-socket/database"
 )
 
 var productMap = struct {
@@ -15,15 +17,15 @@ var productMap = struct {
 	m map[int]Product
 }{m: make(map[int]Product)}
 
-func init() {
-	fmt.Println("loading...")
-	prodMap, err := loadProductMap()
-	productMap.m = prodMap
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Printf("%d products loaded...\n", len(productMap.m))
-}
+// func init() {
+// 	fmt.Println("loading...")
+// 	prodMap, err := loadProductMap()
+// 	productMap.m = prodMap
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	fmt.Printf("%d products loaded...\n", len(productMap.m))
+// }
 
 func loadProductMap() (map[int]Product, error) {
 	fileName := "products.json"
@@ -63,14 +65,21 @@ func removeProduct(productID int) {
 	delete(productMap.m, productID)
 }
 
-func getProductList() []Product {
-	productMap.RLock()
-	products := make([]Product, 0, len(productMap.m))
-	for _, value := range productMap.m {
-		products = append(products, value)
+func getProductList() ([]Product, error) {
+	results, err := database.DbConn.Query("SELECT * FROM products")
+	if err != nil {
+		return nil, err
 	}
-	productMap.RUnlock()
-	return products
+
+	defer results.Close()
+	list := make([]Product, 0)
+	for results.Next() {
+		product := Product{}
+		results.Scan(&product.Manufacturer, &product.PricePerUnit, &product.ProductID, &product.ProductName, &product.QuantityOnHand, &product.Sku, &product.Upc)
+		list = append(list, product)
+	}
+
+	return list, nil
 }
 
 func getProductIds() []int {
