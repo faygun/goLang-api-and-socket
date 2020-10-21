@@ -1,14 +1,18 @@
 package product
 
 import (
+	"context"
 	"database/sql"
-	"log"
+	"time"
 
 	"github.com/faygun/goLang-api-and-socket/database"
 )
 
 func getProduct(productID int) (*Product, error) {
-	row := database.DbConn.QueryRow("SELECT manufacturer, pricePerUnit, productId, productName, quantityOnHand, sku, upc FROM products where productId = ? ", productID)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	row := database.DbConn.QueryRowContext(ctx, "SELECT manufacturer, pricePerUnit, productId, productName, quantityOnHand, sku, upc FROM products where productId = ? ", productID)
 	product := Product{}
 	err := row.Scan(&product.Manufacturer, &product.PricePerUnit, &product.ProductID, &product.ProductName, &product.QuantityOnHand, &product.Sku, &product.Upc)
 
@@ -21,7 +25,10 @@ func getProduct(productID int) (*Product, error) {
 }
 
 func getProductList() ([]Product, error) {
-	results, err := database.DbConn.Query("SELECT manufacturer, pricePerUnit, productId, productName, quantityOnHand, sku, upc FROM products")
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	results, err := database.DbConn.QueryContext(ctx, "SELECT manufacturer, pricePerUnit, productId, productName, quantityOnHand, sku, upc FROM products")
 	if err != nil {
 		return nil, err
 	}
@@ -38,8 +45,10 @@ func getProductList() ([]Product, error) {
 }
 
 func updateProduct(product Product) error {
-	log.Print(1)
-	_, err := database.DbConn.Exec(`UPDATE products set manufacturer=?, pricePerUnit=CAST(? AS DECIMAL(13,2)), productId=?, 
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	_, err := database.DbConn.ExecContext(ctx, `UPDATE products set manufacturer=?, pricePerUnit=CAST(? AS DECIMAL(13,2)), productId=?, 
 								productName=?, quantityOnHand=?, sku=?, upc=? WHERE productId =?`,
 		product.Manufacturer, product.PricePerUnit, product.ProductID,
 		product.ProductName, product.QuantityOnHand, product.Sku, product.Upc, product.ProductID)
@@ -51,7 +60,10 @@ func updateProduct(product Product) error {
 }
 
 func insertProduct(product Product) (int, error) {
-	result, err := database.DbConn.Exec(`INSERT INTO products (manufacturer, pricePerUnit, productName, quantityOnHand, sku, upc)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	result, err := database.DbConn.ExecContext(ctx, `INSERT INTO products (manufacturer, pricePerUnit, productName, quantityOnHand, sku, upc)
 	VALUES(?, ?, ?, ?, ?, ?)`, product.Manufacturer, product.PricePerUnit,
 		product.ProductName, product.QuantityOnHand, product.Sku, product.Upc)
 
@@ -69,7 +81,10 @@ func insertProduct(product Product) (int, error) {
 }
 
 func deleteProduct(productID int) error {
-	_, err := database.DbConn.Exec(`DELETE FROM products WHERE productId=?`, productID)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	_, err := database.DbConn.ExecContext(ctx, `DELETE FROM products WHERE productId=?`, productID)
 
 	if err != nil {
 		return err

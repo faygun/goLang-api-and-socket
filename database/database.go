@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"log"
+	"time"
 )
 
 var DbConn *sql.DB
@@ -13,4 +14,7 @@ func SetupDatabase() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	DbConn.SetConnMaxLifetime(60 * time.Second)
+	DbConn.SetMaxIdleConns(4)
+	DbConn.SetMaxOpenConns(4)
 }
