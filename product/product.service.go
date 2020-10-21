@@ -38,12 +38,15 @@ func handleProducts(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		_, err = addOrUpdateProduct(product)
+
+		insertID, err := insertProduct(product)
+
 		if err != nil {
 			log.Print(err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
+		w.Write([]byte(strconv.Itoa(insertID)))
 		w.WriteHeader(http.StatusCreated)
 	case http.MethodOptions:
 		return
@@ -99,14 +102,23 @@ func handleProduct(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		_, err = addOrUpdateProduct(product)
+
+		log.Print(productID)
+		log.Print(product)
+		err = updateProduct(product)
+
 		if err != nil {
 			log.Print(err)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 	case http.MethodDelete:
-		removeProduct(productID)
+		err := deleteProduct(productID)
+		if err != nil {
+			log.Print(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 
 	case http.MethodOptions:
 		return
