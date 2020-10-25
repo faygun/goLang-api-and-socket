@@ -24,6 +24,26 @@ func getProduct(productID int) (*Product, error) {
 	return &product, nil
 }
 
+func GetTopTenProducts() ([]Product, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	results, err := database.DbConn.QueryContext(ctx, "SELECT manufacturer, pricePerUnit, productId, productName, quantityOnHand, sku, upc FROM products ORDER BY quantityOnHand DESC LIMIT 10")
+	if err != nil {
+		return nil, err
+	}
+
+	defer results.Close()
+	list := make([]Product, 0)
+	for results.Next() {
+		product := Product{}
+		results.Scan(&product.Manufacturer, &product.PricePerUnit, &product.ProductID, &product.ProductName, &product.QuantityOnHand, &product.Sku, &product.Upc)
+		list = append(list, product)
+	}
+
+	return list, nil
+}
+
 func getProductList() ([]Product, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
